@@ -2,14 +2,18 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "Official EigenDB Documentation",
   "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
+    "dark": "/logo/Final Logo Text Transparent.svg",
+    "light": "/logo/Final Logo Text Transparent Light.svg"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/logo/Final Logo Circular.svg",
   "colors": {
-    "primary": "#FFF",
+    "primary": "#0400A3",
     "light": "#AFADFF",
-    "dark": "#000"
+    "dark": "#FFF",
+    "background": {
+      "light": "#FFF",
+      "dark": "#000"
+    }
   },
   "theme": "prism",
   "tabs": [
