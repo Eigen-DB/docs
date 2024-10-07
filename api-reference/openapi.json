@@ -5,7 +5,15 @@
     "description": "REST API for EigenDB, the blazingly fast in-memory vector database.",
     "version": "1.0.0"
   },
+  "security": [{"ApiKeyAuth": []}],
   "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Eigen-API-Key"
+      }
+    },
     "schemas": {
       "responseSchema": {
         "type": "object",
@@ -47,6 +55,7 @@
         "summary": "Database health check",
         "operationId": "healthCheck",
         "description": "Perform a health check on the database.",
+        "security": [],
         "responses": {
           "200": {
             "description": "Database is healthy.",
