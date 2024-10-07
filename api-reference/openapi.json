@@ -1,94 +1,103 @@
 {
-  "openapi": "3.0.1",
+  "openapi": "3.0.3",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
+    "title": "EigenDB REST API",
+    "description": "REST API for EigenDB, the blazingly fast in-memory vector database.",
     "version": "1.0.0"
   },
-  "servers": [
-    {
-      "url": "http://sandbox.mintlify.com"
-    }
-  ],
-  "security": [
-    {
-      "bearerAuth": []
-    }
-  ],
   "paths": {
-    "/plants": {
+    "/health": {
       "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
+        "summary": "Database health check",
+        "operationId": "healthCheck",
+        "description": "Perform a health check on the database.",
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Database is healthy.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "example": {
+                    "status": "healthy"
                   }
                 }
               }
             }
           },
-          "400": {
-            "description": "Unexpected error",
+          "500": {
+            "description": "Database is unhealthy.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "example": {
+                    "status": "unhealthy"
+                  }
                 }
               }
             }
           }
         }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
+      }
+    },
+    "/vector/insert": {
+      "put": {
+        "summary": "Insert a vector",
+        "operationId": "insertVector",
+        "description": "Inserts a vector into the database.",
         "requestBody": {
-          "description": "Plant to add to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "type": "object",
+                "required": [
+                  "components"
+                ],
+                "properties": {
+                  "components": {
+                    "type": "array",
+                    "items": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "description": "Components of vector to be inserted"
+                  }
+                }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "description": "plant response",
+            "description": "Vector inserted.",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Plant"
+                  "type": "string",
+                  "example": "Vector successfully inserted."
                 }
               }
             }
           },
           "400": {
-            "description": "unexpected error",
+            "description": "Invalid request or incorrect dimensionality.",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "string",
+                  "example": "vector provided had the wrong dimensionality"
                 }
               }
             }
@@ -96,99 +105,377 @@
         }
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
+    "/vector/bulk-insert": {
+      "put": {
+        "summary": "Insert many vectors",
+        "operationId": "bulkInsertVectors",
+        "description": "Insert many vectors at once into the database.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "setOfComponents"
+                ],
+                "properties": {
+                  "setOfComponents": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "number",
+                        "format": "float"
+                      }
+                    },
+                    "description": "Array of vectors, each represented by their components (float32[][])"
+                  }
+                }
+              }
             }
           }
-        ],
+        },
         "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
+          "200": {
+            "description": "Vectors inserted.",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "string",
+                  "example": "10/10 vectors successfully inserted."
                 }
               }
             }
           }
         }
       }
-    }
-  },
-  "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
-          }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
+    },
+    "/vector/search": {
+      "get": {
+        "summary": "Perform similarity search",
+        "operationId": "searchVector",
+        "description": "Perform similarity search on a query vector.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "queryVectorId",
+                  "k"
+                ],
+                "properties": {
+                  "queryVectorId": {
+                    "type": "number",
+                    "format": "int",
+                    "description": "ID of the query vector"
+                  },
+                  "k": {
+                    "type": "number",
+                    "format": "int",
+                    "description": "K-nearest vectors desired"
+                  }
+                }
               }
             }
           }
-        ]
-      },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
+        },
+        "responses": {
+          "200": {
+            "description": "The k-nearest vectors returned in a array.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "example": [
+                    4,
+                    7,
+                    2,
+                    8,
+                    5
+                  ]
+                }
+              }
+            }
           }
         }
       }
     },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
+    "/update-config/persistence/time-interval": {
+      "post": {
+        "summary": "Update persistence time interval",
+        "operationId": "updatePersistenceTimeInterval",
+        "description": "Modify the time interval at which vectors in memory are persisted on disk.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "updatedValueSecs"
+                ],
+                "properties": {
+                  "updatedValueSecs": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "The new time interval in seconds"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Time interval successfully updated.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Time interval updated."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-config/api/port": {
+      "post": {
+        "summary": "Update the API port",
+        "operationId": "updateApiPort",
+        "description": "Update the port on which the API runs (default = 8080). EigenDB must be restarted this to take effect.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "updatedPort"
+                ],
+                "properties": {
+                  "updatedPort": {
+                    "type": "number",
+                    "format": "int",
+                    "description": "The new port number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API port successfully updated.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "API port updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-config/api/address": {
+      "post": {
+        "summary": "Update the API address",
+        "operationId": "updateApiAddress",
+        "description": "Update the address on which the API runs (default = 0.0.0.0). EigenDB must be restarted this to take effect.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "updatedAddress"
+                ],
+                "properties": {
+                  "updatedAddress": {
+                    "type": "string",
+                    "description": "The new API address"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API address successfully updated.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "API address updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-config/hnsw-params/similarity-metric": {
+      "post": {
+        "summary": "Update the similarity metric",
+        "operationId": "updateSimilarityMetric",
+        "description": "Update the similarity metric used in similarity search (default = euclidean). EigenDB must be restarted this to take effect.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "updatedMetric"
+                ],
+                "properties": {
+                  "updatedMetric": {
+                    "type": "string",
+                    "description": "The new similarity metric (cosine, euclidean, ip)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Similarity metric successfully updated.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Vector similarity metric updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-config/hnsw-params/vector-space-size": {
+      "post": {
+        "summary": "Update the vector space size",
+        "operationId": "updateVectorSpaceSize",
+        "description": "Update the vector storage capacity. EigenDB must be restarted this to take effect.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "updatedSize"
+                ],
+                "properties": {
+                  "updatedSize": {
+                    "type": "string",
+                    "description": "The new vector space size"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vector space size successfully updated.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Vector space size updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-config/hnsw-params/m": {
+      "post": {
+        "summary": "Update the M parameter",
+        "operationId": "updateMParam",
+        "description": "Update M parameter in the HNSW algorithm used for similarity search. EigenDB must be restarted this to take effect.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "updatedM"
+                ],
+                "properties": {
+                  "updatedM": {
+                    "type": "string",
+                    "description": "The new M parameter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "M parameter successfully updated.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "M paramater updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-config/hnsw-params/ef-construction": {
+      "post": {
+        "summary": "Update the efConstruction parameter",
+        "operationId": "updateEFConstParam",
+        "description": "Update efConstruction parameter in the HNSW algorithm used for similarity search. EigenDB must be restarted this to take effect.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "updatedEfConst"
+                ],
+                "properties": {
+                  "updatedEfConst": {
+                    "type": "string",
+                    "description": "The new efConstruction parameter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "efConstruction parameter successfully updated.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "EF Construction paramater updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
