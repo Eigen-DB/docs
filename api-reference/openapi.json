@@ -5,6 +5,42 @@
     "description": "REST API for EigenDB, the blazingly fast in-memory vector database.",
     "version": "1.0.0"
   },
+  "components": {
+    "schemas": {
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "description": "Status code of the response"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message giving basic information on the response"
+          },
+          "data": {
+            "type": "object",
+            "description": "Important data to be given to the caller"
+          },
+          "error": {
+            "type": "object",
+            "description": "An error that has occured",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "An error code unique to this type of error"
+              },
+              "description": {
+                "type": "string",
+                "description": "A detailed description of the error"
+              }
+            }
+          }
+        },
+        "required": ["status", "message"]
+      }
+    }
+  },
   "paths": {
     "/health": {
       "get": {
@@ -17,15 +53,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string"
-                    }
-                  },
-                  "example": {
-                    "status": "healthy"
-                  }
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "healthy"
                 }
               }
             }
@@ -35,14 +67,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string"
-                    }
-                  },
-                  "example": {
-                    "status": "unhealthy"
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "unhealthy",
+                  "error": {
+                    "code": "ERROR_CONNECTING_TO_REDIS",
+                    "description": "detailed description of the error..."
                   }
                 }
               }
@@ -81,12 +113,15 @@
         },
         "responses": {
           "200": {
-            "description": "Vector inserted.",
+            "description": "Vector successfully inserted.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "Vector successfully inserted."
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "Vector successfully inserted."
                 }
               }
             }
@@ -94,10 +129,35 @@
           "400": {
             "description": "Invalid request or incorrect dimensionality.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "vector provided had the wrong dimensionality"
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 400,
+                  "message": "The vector you provided is invalid.",
+                  "error": {
+                    "code": "INVALID_VECTOR_PROVIDED",
+                    "description": "detailed description of the error..."
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal server error occured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "An error occured when inserting your vector.",
+                  "error": {
+                    "code": "CANNOT_INSERT_VECTOR",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
@@ -107,7 +167,7 @@
     },
     "/vector/bulk-insert": {
       "put": {
-        "summary": "Insert many vectors",
+        "summary": "Insert many vectors at once",
         "operationId": "bulkInsertVectors",
         "description": "Insert many vectors at once into the database.",
         "requestBody": {
@@ -117,10 +177,10 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "setOfComponents"
+                  "embeddings"
                 ],
                 "properties": {
-                  "setOfComponents": {
+                  "embeddings": {
                     "type": "array",
                     "items": {
                       "type": "array",
@@ -129,7 +189,7 @@
                         "format": "float"
                       }
                     },
-                    "description": "Array of vectors, each represented by their components (float32[][])"
+                    "description": "Array of vectors, each represented by their embedding (float32[][])"
                   }
                 }
               }
@@ -138,12 +198,33 @@
         },
         "responses": {
           "200": {
-            "description": "Vectors inserted.",
+            "description": "Vectors successfully inserted.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "10/10 vectors successfully inserted."
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "50/50 vectors successfully inserted."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "A vector was skipped.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "49/50 vectors successfully inserted.",
+                  "error": {
+                    "code": "VECTORS_SKIPPED",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
@@ -184,18 +265,36 @@
         },
         "responses": {
           "200": {
-            "description": "The k-nearest vectors returned in a array.",
+            "description": "The k-nearest vectors returned in an array.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "array",
-                  "example": [
-                    4,
-                    7,
-                    2,
-                    8,
-                    5
-                  ]
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "Similarity search successfully performed.",
+                  "data": {
+                    "nearest_neighbor_ids": [54,98,21,63,45]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An error occured when performing similarity search.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 400,
+                  "message": "An error occured during the similarity search.",
+                  "error": {
+                    "code": "SIMILARITY_SEARCH_ERROR",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
@@ -232,10 +331,31 @@
           "200": {
             "description": "Time interval successfully updated.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "Time interval updated."
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "Time interval updated."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An error occured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "An error occured.",
+                  "error": {
+                    "code": "ERROR_UPDATING_PERSISTENCE_TIME_INTERVAL",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
@@ -272,10 +392,31 @@
           "200": {
             "description": "API port successfully updated.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "API port updated. Please restart the database for it to take effect."
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "API port updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An error occured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "An error occured.",
+                  "error": {
+                    "code": "ERROR_UPDATING_API_PORT",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
@@ -293,16 +434,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "updatedAddress"
-                ],
-                "properties": {
-                  "updatedAddress": {
-                    "type": "string",
-                    "description": "The new API address"
-                  }
-                }
+                "$ref": "#/components/schemas/responseSchema"
               }
             }
           }
@@ -311,10 +443,31 @@
           "200": {
             "description": "API address successfully updated.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "API address updated. Please restart the database for it to take effect."
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "API address updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An error occured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "An error occured.",
+                  "error": {
+                    "code": "ERROR_UPDATING_API_ADDRESS",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
@@ -350,10 +503,49 @@
           "200": {
             "description": "Similarity metric successfully updated.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "Vector similarity metric updated. Please restart the database for it to take effect."
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "Vector similarity metric updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid similarity metric.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 400,
+                  "message": "Something went wrong when trying to update the similarity metric.",
+                  "error": {
+                    "code": "INVALID_SIMILARITY_METRIC",
+                    "description": "detailed description of the error..."
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An error occured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "An error occured.",
+                  "error": {
+                    "code": "ERROR_UPDATING_SIMILARITY_METRIC",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
@@ -389,10 +581,31 @@
           "200": {
             "description": "Vector space size successfully updated.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "Vector space size updated. Please restart the database for it to take effect."
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "Vector space size updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An error occured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "An error occured.",
+                  "error": {
+                    "code": "ERROR_UPDATING_SPACE_SIZE",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
@@ -428,10 +641,31 @@
           "200": {
             "description": "M parameter successfully updated.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "M paramater updated. Please restart the database for it to take effect."
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "M parameter updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An error occured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "An error occured.",
+                  "error": {
+                    "code": "ERROR_UPDATING_M",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
@@ -467,10 +701,31 @@
           "200": {
             "description": "efConstruction parameter successfully updated.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "EF Construction paramater updated. Please restart the database for it to take effect."
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "EF Construction parameter updated. Please restart the database for it to take effect."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An error occured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 500,
+                  "message": "An error occured.",
+                  "error": {
+                    "code": "ERROR_UPDATING_EF_CONSTRUCTION",
+                    "description": "detailed description of the error..."
+                  }
                 }
               }
             }
