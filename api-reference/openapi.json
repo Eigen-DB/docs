@@ -115,6 +115,47 @@
         }
       }
     },
+    "/test-auth": {
+      "get": {
+        "summary": "Test your authentication",
+        "operationId": "testAuth",
+        "description": "Test your authentication using your API key.",
+        "responses": {
+          "200": {
+            "description": "Authenticated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "Authenticated."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseSchema"
+                },
+                "example": {
+                  "status": 401,
+                  "message": "Invalid API key.",
+                  "error": {
+                    "code": "INVALID_API_KEY",
+                    "description": "The API key you provided is invalid."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/vector/insert": {
       "put": {
         "summary": "Insert a vector",
