@@ -20,7 +20,7 @@
     {
       "name": "API Reference",
       "url": "api-reference",
-      "openapi": "https://raw.githubusercontent.com/Eigen-DB/docs/refs/heads/main/specs/openapi.yaml"
+      "openapi": "https://raw.githubusercontent.com/Eigen-DB/docs/refs/heads/main/api-reference/openapi.json"
     }
   ],
   "anchors": [
