@@ -15,6 +15,24 @@
       }
     },
     "schemas": {
+      "vectorSchema": {
+        "type": "object",
+        "properties": {
+          "embedding": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "The vector's embedding"
+          },
+          "id": {
+            "type": "integer",
+            "description": "The vector's ID/label"
+          }
+        },
+        "required": ["embedding", "id"]
+      },
       "responseSchema": {
         "type": "object",
         "properties": {
@@ -66,7 +84,12 @@
                 },
                 "example": {
                   "status": 200,
-                  "message": "healthy"
+                  "message": "healthy",
+                  "data": {
+                    "cpu_usage_percent": 0.06,
+                    "mem_usage_percent": 1.31,
+                    "uptime": "72h3m0.5s"
+                  } 
                 }
               }
             }
@@ -82,7 +105,7 @@
                   "status": 500,
                   "message": "unhealthy",
                   "error": {
-                    "code": "ERROR_CONNECTING_TO_REDIS",
+                    "code": "ERROR_GETTING_CPU_USAGE",
                     "description": "detailed description of the error..."
                   }
                 }
@@ -104,16 +127,12 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "components"
+                  "vector"
                 ],
                 "properties": {
-                  "components": {
-                    "type": "array",
-                    "items": {
-                      "type": "number",
-                      "format": "float"
-                    },
-                    "description": "Components of vector to be inserted"
+                  "vector": {
+                    "$ref": "#/components/schemas/vectorSchema",
+                    "description": "Vector to be inserted"
                   }
                 }
               }
@@ -186,19 +205,16 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "embeddings"
+                  "vectors"
                 ],
                 "properties": {
-                  "embeddings": {
+                  "vectors": {
                     "type": "array",
                     "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "number",
-                        "format": "float"
-                      }
+                      "type": "object",
+                      "$ref": "#/components/schemas/vectorSchema"
                     },
-                    "description": "Array of vectors, each represented by their embedding (float32[][])"
+                    "description": "Array of vectors, each represented by their embedding."
                   }
                 }
               }
