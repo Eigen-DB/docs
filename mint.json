@@ -36,6 +36,7 @@
       "pages": [
         "overview",
         "quickstart",
+        "how-fast-is-it",
         "our-mission",
         {
           "group": "Vector databases explained",
